@@ -1,0 +1,26 @@
+{
+  "name": "the-gap-of-ego",
+  "version": "0.1.0",
+  "description": "μ-seeded cognitive architecture — the balance primitive as coordinate system",
+  "type": "module",
+  "main": "dist/core/mu-primitives.js",
+  "scripts": {
+    "build": "tsc",
+    "demo": "npx tsx src/core/mu-demo.ts",
+    "test": "npx tsx src/core/mu-demo.ts"
+  },
+  "keywords": [
+    "cognitive-architecture",
+    "balance-primitive",
+    "mu",
+    "fine-structure-constant",
+    "complex-numbers",
+    "8-fold-symmetry"
+  ],
+  "author": "Quigles1337",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "tsx": "^4.7.0"
+  }
+}
