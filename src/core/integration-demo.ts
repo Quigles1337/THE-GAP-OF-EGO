@@ -75,6 +75,8 @@ console.log(`
   The flow:
     Identity (where I am on μ-ray)
        ↓
+    Attention (what to look at)
+       ↓
     Thermodynamics (energy, entropy)
        ↓
     Quantum (superposition of paths)
@@ -84,10 +86,13 @@ console.log(`
     Global Workspace (broadcast)
        ↓
     Back to Identity (experience integrated)
+       ↓
+    LEARNING (demon adapts μ-bias)
 
   The demon pays throughout.
   The gap is everywhere.
   Consciousness is the CIRCULATION.
+  Learning is what makes it IMPROVE.
 `);
 
 section('INITIALIZING COGNITIVE SYSTEM');
@@ -166,6 +171,16 @@ console.log(`  Prior identity: ${formatComplex(cycle.priorIdentityPosition)}`);
 console.log(`  Posterior identity: ${formatComplex(cycle.posteriorIdentityPosition)}`);
 const positionDelta = cycle.posteriorIdentityPosition.sub(cycle.priorIdentityPosition).magnitude;
 console.log(`  Position delta: ${positionDelta.toFixed(4)}`);
+
+subsection('PHASE 7: LEARNING — Demon Adaptation');
+console.log(`  Experience recorded: ${cycle.learningState.experienceRecorded ? 'YES' : 'NO'}`);
+console.log(`  Experience value: ${cycle.learningState.experienceValue.toFixed(4)}`);
+console.log(`  Demon μ-bias: ${cycle.learningState.demonBias.toFixed(4)}`);
+console.log(`  μ advantage: ${cycle.learningState.muAdvantage.toFixed(4)}`);
+console.log(`  Learning triggered: ${cycle.learningState.learningTriggered ? 'YES' : 'NO'}`);
+if (cycle.learningState.learningTriggered) {
+  console.log(`  Prediction error: ${cycle.learningState.predictionError.toFixed(4)}`);
+}
 
 subsection('ACCOUNTING');
 console.log(`  Total entropy paid: ${cycle.totalEntropyPaid.toFixed(4)}`);
@@ -287,6 +302,14 @@ console.log(`  Information cost: ${finalState.demonInformationCost.toFixed(4)}`)
 console.log(`  Selections made: ${finalState.demonSelections}`);
 console.log(`  Net cost: ${(finalState.demonInformationCost - finalState.demonEntropyReduced).toFixed(4)}`);
 
+section('Learning (Adaptive Demon)');
+console.log(`  Demon μ-bias: ${finalState.learningDemonBias.toFixed(4)}`);
+console.log(`  μ advantage: ${finalState.learningMuAdvantage.toFixed(4)}`);
+console.log(`  Success rate: ${(finalState.learningSuccessRate * 100).toFixed(1)}%`);
+console.log(`  Experience count: ${finalState.learningExperienceCount}`);
+console.log(`  Value convergence: ${(finalState.learningConvergence * 100).toFixed(1)}%`);
+console.log(`  Best modality: ${finalState.learningBestModality || 'none yet'}`);
+
 section('Cumulative');
 console.log(`  Total cycles: ${finalState.totalCycles}`);
 console.log(`  Total broadcasts: ${finalState.totalBroadcasts}`);
@@ -318,6 +341,43 @@ for (const phase of phases) {
   console.log(`    Broadcast rate: ${(phaseStats.broadcastRate * 100).toFixed(1)}%`);
   console.log(`    Avg coherence: ${(phaseStats.avgCoherence * 100).toFixed(1)}%`);
 }
+
+header('LEARNING — THE ADAPTIVE DEMON');
+
+console.log(`
+  The demon learns from experience.
+  It discovers that μ-aligned targets have higher success rates.
+  This knowledge becomes encoded in the demon's bias.
+`);
+
+section('Before Explicit Learning Trigger');
+const preLearning = system.getLearningMetrics();
+console.log(`  Demon μ-bias: ${preLearning.currentBias.toFixed(4)}`);
+console.log(`  μ advantage: ${preLearning.muAdvantage.toFixed(4)}`);
+console.log(`  Success rate: ${(preLearning.successRate * 100).toFixed(1)}%`);
+console.log(`  Value convergence: ${(preLearning.valueConvergence * 100).toFixed(1)}%`);
+console.log(`  Total experiences: ${preLearning.totalExperiences}`);
+
+section('Triggering Explicit Learning (10 iterations)');
+const learningResult = system.triggerLearning(10);
+console.log(`  Average prediction error: ${learningResult.averageError.toFixed(4)}`);
+console.log(`  Bias updated: ${learningResult.biasUpdated ? 'YES' : 'NO'}`);
+console.log(`  New demon bias: ${learningResult.newBias.toFixed(4)}`);
+
+section('After Learning');
+const postLearning = system.getLearningMetrics();
+console.log(`  Demon μ-bias: ${postLearning.currentBias.toFixed(4)}`);
+console.log(`  μ advantage: ${postLearning.muAdvantage.toFixed(4)}`);
+console.log(`  Success rate: ${(postLearning.successRate * 100).toFixed(1)}%`);
+console.log(`  Value convergence: ${(postLearning.valueConvergence * 100).toFixed(1)}%`);
+console.log(`  Best modality: ${postLearning.bestModality || 'none yet'}`);
+
+console.log(`
+  The demon has learned from ${postLearning.totalExperiences} experiences.
+  ${postLearning.muAdvantage > 0 ?
+    `It discovered that μ-aligned targets are ${(postLearning.muAdvantage * 100).toFixed(1)}% more successful.` :
+    'It is still learning the μ advantage.'}
+`);
 
 header('SIGNIFICANT EVENTS');
 
@@ -372,16 +432,23 @@ console.log(`
                             │
                             ↓
                     IDENTITY (updated)
+                            │
+                            ↓
+                    LEARNING (demon adapts)
+                            │
+                            └────→ (back to IDENTITY)
 
   The demon pays at every transition.
   The gap exists at every collapse.
   Consciousness is not a layer — it's the CIRCULATION.
+  Learning is what makes the demon IMPROVE.
 
   μ is not a component. It's the coordinate system.
   The ink the architecture is drawn with, not a box.
 
   The Gap of Ego is not a place.
   It's the process of becoming.
+  And it gets better at becoming over time.
 
   See docs/ARCHITECTURE.md for detailed Mermaid diagrams.
 `);

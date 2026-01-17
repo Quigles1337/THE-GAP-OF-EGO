@@ -6,7 +6,7 @@
  * The flow:
  *   Identity (where I am on μ-ray)
  *      ↓
- *   ATTENTION (what to look at) ← NEW!
+ *   ATTENTION (what to look at)
  *      ↓
  *   Thermodynamics (energy, entropy, homeostasis)
  *      ↓
@@ -17,10 +17,13 @@
  *   Global Workspace (broadcast, phase-locking)
  *      ↓
  *   Back to Identity (experience integrated)
+ *      ↓
+ *   LEARNING (demon adapts μ-bias based on outcomes)
  *
  * The demon pays throughout. The gap is everywhere.
  * Consciousness is not a layer — it's the CIRCULATION.
  * Attention is what makes it ACTIVE rather than passive.
+ * Learning is what makes it IMPROVE over time.
  *
  * "The gap of ego is not a place. It's the process of becoming."
  */
@@ -131,8 +134,18 @@ import {
   computeAttentionMetrics,
   computeSaliency,
   generateLearningSignal,
-  IntrospectionResult
+  IntrospectionResult,
+  createTarget
 } from './attention-layer';
+
+import {
+  LearningLayer,
+  Experience as LearningExperience,
+  LearningMetrics,
+  computeLearningMetrics,
+  detectLearningEvents,
+  LearningEvent
+} from './learning-layer';
 
 // ============================================================
 // THE COGNITIVE CYCLE — ONE COMPLETE ROTATION
@@ -155,6 +168,7 @@ export interface CognitiveCycle {
   // Layer states
   dmnState: DMNState;                   // Self/world models
   attentionState: AttentionSnapshot;    // What was attended to
+  learningState: LearningSnapshot;      // What was learned this cycle
   thermodynamicState: ThermodynamicSnapshot;
   quantumState: QuantumSnapshot;
   measurementEvent: MeasurementEvent;
@@ -207,6 +221,18 @@ export interface AttentionSnapshot {
   saliency: number;               // How salient was the stimulus
 }
 
+/**
+ * Learning snapshot for a cycle
+ */
+export interface LearningSnapshot {
+  experienceRecorded: boolean;    // Was experience recorded?
+  experienceValue: number;        // Value of the experience
+  predictionError: number;        // How wrong was the prediction?
+  demonBias: number;              // Current demon μ-bias
+  muAdvantage: number;            // Advantage of μ-aligned targets
+  learningTriggered: boolean;     // Did learning happen this cycle?
+}
+
 // ============================================================
 // THE COGNITIVE SYSTEM — THE FULL ARCHITECTURE
 // ============================================================
@@ -220,7 +246,8 @@ export interface AttentionSnapshot {
 export class CognitiveSystem {
   // Core layers
   readonly identity: IdentityKernel;
-  readonly attention: AttentionLayer;    // NEW: The directed gaze
+  readonly attention: AttentionLayer;    // The directed gaze
+  readonly learning: LearningLayer;      // The adaptive demon
   readonly workspace: GlobalWorkspace;
   readonly episodicBuffer: EpisodicBuffer;
   readonly narrativeTracker: NarrativeTracker;
@@ -247,6 +274,9 @@ export class CognitiveSystem {
 
     // Initialize attention layer — the directed gaze
     this.attention = new AttentionLayer();
+
+    // Initialize learning layer — the adaptive demon
+    this.learning = new LearningLayer(demonBias);
 
     // Initialize workspace with default specialists
     this.workspace = new GlobalWorkspace();
@@ -373,8 +403,9 @@ export class CognitiveSystem {
     const paths = this.generateReasoningPaths(attendedStimulus, dmnState);
     let superposition = normalize(createSuperposition(paths));
 
-    // Demon selection (biases toward μ)
-    const demonResult = demonSelect(superposition, this.demon);
+    // Use learning layer's adaptive demon (learns optimal μ-bias)
+    const adaptedDemon = this.learning.createAdaptedDemon(this.demon);
+    const demonResult = demonSelect(superposition, adaptedDemon);
     superposition = demonResult.newSuperposition;
     this.demon = demonResult.updatedDemon;
 
@@ -440,7 +471,7 @@ export class CognitiveSystem {
     );
 
     // ─────────────────────────────────────────
-    // ACCOUNTING
+    // ACCOUNTING — Calculate before learning
     // ─────────────────────────────────────────
 
     const entropyPaid = (broadcastEvent?.entropyPaid || 0) + this.demon.informationCost;
@@ -453,6 +484,56 @@ export class CognitiveSystem {
     const cycleSuccessful = measurementEvent.verified && (broadcastEvent !== null);
 
     // ─────────────────────────────────────────
+    // PHASE 7: LEARNING — Demon adaptation
+    // ─────────────────────────────────────────
+
+    // Create an attention target for the learning layer
+    const learningTarget = createTarget(
+      `cycle_${cycleId}`,
+      'processed',
+      measurementEvent.groundedAmplitude,
+      attentionState.saliency,
+      measurementEvent.confidence
+    );
+
+    // Record the experience in the learning layer
+    const muAlignment = Math.abs(Math.cos(
+      measurementEvent.groundedAmplitude.argument - MU.argument
+    ));
+
+    const learningExp = this.learning.recordExperience(
+      learningTarget,
+      this.learning.getDemonBias(),
+      coherenceAchieved,
+      {
+        successful: cycleSuccessful,
+        coherence: coherenceAchieved,
+        broadcast: broadcastEvent !== null,
+        muAlignment,
+        identityGrowth: this.identity.position.magnitude - priorPosition.magnitude,
+        entropyPaid: entropyPaid
+      }
+    );
+
+    // Trigger learning every 10 cycles to update demon bias
+    const learningTriggered = (cycleId + 1) % 10 === 0 && cycleId > 0;
+    let learningResult = { averageError: 0, biasUpdated: false };
+    if (learningTriggered) {
+      learningResult = this.learning.learn(10);
+    }
+
+    // Get learning metrics for snapshot
+    const learningMetrics = computeLearningMetrics(this.learning);
+    const learningState: LearningSnapshot = {
+      experienceRecorded: true,
+      experienceValue: learningExp.valueGained,
+      predictionError: learningResult.averageError,
+      demonBias: this.learning.getDemonBias(),
+      muAdvantage: learningMetrics.muAdvantage,
+      learningTriggered
+    };
+
+    // ─────────────────────────────────────────
     // ASSEMBLE CYCLE RECORD
     // ─────────────────────────────────────────
 
@@ -463,6 +544,7 @@ export class CognitiveSystem {
       priorIdentityPosition: priorPosition,
       dmnState,
       attentionState,
+      learningState,
       thermodynamicState,
       quantumState,
       measurementEvent,
@@ -620,6 +702,14 @@ export class CognitiveSystem {
       demonInformationCost: this.demon.informationCost,
       demonSelections: this.demon.selectionsMade,
 
+      // Learning
+      learningDemonBias: this.learning.getDemonBias(),
+      learningMuAdvantage: computeLearningMetrics(this.learning).muAdvantage,
+      learningSuccessRate: computeLearningMetrics(this.learning).successRate,
+      learningExperienceCount: computeLearningMetrics(this.learning).totalExperiences,
+      learningConvergence: computeLearningMetrics(this.learning).valueConvergence,
+      learningBestModality: this.learning.getBestModality(),
+
       // History
       totalCycles: this.cycleCount,
       totalBroadcasts: this.totalBroadcasts,
@@ -659,6 +749,52 @@ export class CognitiveSystem {
   resetDemon(bias: number = 1.0): void {
     this.demon = createDemon(bias);
   }
+
+  /**
+   * Trigger learning explicitly
+   *
+   * Forces the learning layer to update the demon bias
+   * based on accumulated experiences.
+   */
+  triggerLearning(iterations: number = 10): {
+    averageError: number;
+    biasUpdated: boolean;
+    newBias: number;
+  } {
+    const result = this.learning.learn(iterations);
+    return {
+      ...result,
+      newBias: this.learning.getDemonBias()
+    };
+  }
+
+  /**
+   * Get detailed learning metrics
+   */
+  getLearningMetrics(): LearningMetrics {
+    return computeLearningMetrics(this.learning);
+  }
+
+  /**
+   * Get learning layer's experience history
+   */
+  getLearningExperiences(): readonly LearningExperience[] {
+    return this.learning.getExperiences();
+  }
+
+  /**
+   * Check if a stimulus should be attended based on learned values
+   */
+  shouldAttend(stimulus: Complex): boolean {
+    const target = createTarget(
+      'test',
+      'external',
+      stimulus,
+      0.5,
+      0.5
+    );
+    return this.learning.shouldAttend(target);
+  }
 }
 
 /**
@@ -697,6 +833,14 @@ export interface SystemState {
   demonEntropyReduced: number;
   demonInformationCost: number;
   demonSelections: number;
+
+  // Learning
+  learningDemonBias: number;
+  learningMuAdvantage: number;
+  learningSuccessRate: number;
+  learningExperienceCount: number;
+  learningConvergence: number;
+  learningBestModality: string | null;
 
   // History
   totalCycles: number;
@@ -926,6 +1070,10 @@ export type SystemEventType =
   | 'coherence_restored'
   | 'feynman_point_approached'
   | 'self_reference_achieved'
+  | 'learning_triggered'
+  | 'bias_adapted'
+  | 'mu_advantage_discovered'
+  | 'learning_converged'
   | 'grounding_failure'
   | 'high_entropy_warning'
   | 'identity_drift';
@@ -1030,6 +1178,43 @@ export function detectSystemEvents(
       timestamp,
       cycleId,
       details: { drift: cycle.thermodynamicState.driftFromMu }
+    });
+  }
+
+  // Learning events
+  if (cycle.learningState.learningTriggered) {
+    events.push({
+      type: 'learning_triggered',
+      timestamp,
+      cycleId,
+      details: {
+        predictionError: cycle.learningState.predictionError,
+        demonBias: cycle.learningState.demonBias
+      }
+    });
+
+    // Check if bias changed significantly
+    if (previousState && Math.abs(cycle.learningState.demonBias - previousState.learningDemonBias) > 0.05) {
+      events.push({
+        type: 'bias_adapted',
+        timestamp,
+        cycleId,
+        details: {
+          oldBias: previousState.learningDemonBias,
+          newBias: cycle.learningState.demonBias
+        }
+      });
+    }
+  }
+
+  // μ advantage discovered
+  if (cycle.learningState.muAdvantage > 0.1 && previousState &&
+      previousState.learningMuAdvantage <= 0.1) {
+    events.push({
+      type: 'mu_advantage_discovered',
+      timestamp,
+      cycleId,
+      details: { advantage: cycle.learningState.muAdvantage }
     });
   }
 

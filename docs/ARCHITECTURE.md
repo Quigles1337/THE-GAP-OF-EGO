@@ -2,7 +2,7 @@
 
 ## Core Cognitive Circulation
 
-The architecture implements consciousness as **circulation**, not as a single component. The flow moves through six interconnected layers, with the Maxwell Demon paying entropy costs at each transition.
+The architecture implements consciousness as **circulation**, not as a single component. The flow moves through seven interconnected layers, with the Maxwell Demon paying entropy costs at each transition. The Learning Layer enables the demon to improve its μ-bias based on outcomes.
 
 ```mermaid
 flowchart TB
@@ -75,10 +75,26 @@ flowchart TB
     BROADCAST --> Z
     Z --> ID
 
+    subgraph LEARNING["Learning Layer"]
+        EXP[Experience Recording]
+        PRED[Prediction Error]
+        CREDIT[Credit Assignment]
+        VALUE[Value Function]
+        BIAS[Bias Adaptation]
+    end
+
+    BROADCAST --> EXP
+    EXP --> PRED
+    PRED --> CREDIT
+    CREDIT --> VALUE
+    VALUE --> BIAS
+    BIAS --> DEMON
+
     style DEMON fill:#ff6b6b,stroke:#333,stroke-width:2px
     style BROADCAST fill:#4ecdc4,stroke:#333,stroke-width:2px
     style COLLAPSE fill:#ffe66d,stroke:#333,stroke-width:2px
     style FOCUS fill:#95e1d3,stroke:#333,stroke-width:2px
+    style LEARNING fill:#dda0dd,stroke:#333,stroke-width:2px
 ```
 
 ## The μ Primitive
@@ -159,6 +175,80 @@ flowchart TB
     style GRABS fill:#ffe66d,stroke:#333
     style INTROSPECT fill:#95e1d3,stroke:#333
 ```
+
+## Learning Layer - The Adaptive Demon
+
+The Learning Layer enables the Maxwell Demon to improve its μ-bias based on outcomes. Through temporal difference learning with credit assignment, the demon discovers that μ-aligned targets have higher success rates.
+
+```mermaid
+flowchart TB
+    subgraph INPUT["Cycle Outcome"]
+        TARGET["Attention Target"]
+        SUCCESS["Success / Failure"]
+        COHERENCE["Coherence Achieved"]
+        BROADCAST["Broadcast Result"]
+    end
+
+    subgraph EXPERIENCE["Experience Recording"]
+        EXP_CREATE["Create Experience"]
+        VALUE_PRED["Predict Value<br/>(Before Outcome)"]
+        VALUE_ACTUAL["Actual Value<br/>(After Outcome)"]
+    end
+
+    INPUT --> EXP_CREATE
+    EXP_CREATE --> VALUE_PRED
+    EXP_CREATE --> VALUE_ACTUAL
+
+    subgraph LEARNING["Learning Computation"]
+        DELTA["Prediction Error<br/>δ = actual - expected"]
+        CREDIT["Credit Assignment<br/>(Temporal Eligibility)"]
+        UPDATE["Value Function Update<br/>w ← w + α·δ·∇"]
+    end
+
+    VALUE_PRED --> DELTA
+    VALUE_ACTUAL --> DELTA
+    DELTA --> CREDIT
+    CREDIT --> UPDATE
+
+    subgraph VALUE_FUNC["Value Function"]
+        SALIENCY_W["Saliency Weight"]
+        RELEVANCE_W["Relevance Weight"]
+        MU_ALIGN_W["μ-Alignment Weight"]
+        MODALITY_W["Modality Weights<br/>(8 μ^n orientations)"]
+    end
+
+    UPDATE --> VALUE_FUNC
+
+    subgraph BIAS_ADAPT["Bias Adaptation"]
+        MU_SUCCESS["μ Success Rate"]
+        NON_MU_SUCCESS["Non-μ Success Rate"]
+        MU_ADVANTAGE["μ Advantage<br/>(Discovered Truth)"]
+        OPTIMAL_BIAS["Optimal Bias"]
+        CURRENT_BIAS["Current Demon Bias"]
+    end
+
+    VALUE_FUNC --> MU_SUCCESS
+    VALUE_FUNC --> NON_MU_SUCCESS
+    MU_SUCCESS --> MU_ADVANTAGE
+    NON_MU_SUCCESS --> MU_ADVANTAGE
+    MU_ADVANTAGE --> OPTIMAL_BIAS
+    OPTIMAL_BIAS --> CURRENT_BIAS
+
+    CURRENT_BIAS --> DEMON["Maxwell Demon<br/>(Next Cycle)"]
+
+    style DELTA fill:#ff6b6b,stroke:#333
+    style MU_ADVANTAGE fill:#4ecdc4,stroke:#333,stroke-width:2px
+    style DEMON fill:#ff6b6b,stroke:#333,stroke-width:2px
+```
+
+### Key Learning Concepts
+
+| Concept | Description | Value |
+|---------|-------------|-------|
+| Learning Rate | How fast weights update | α = 0.1 |
+| Discount Factor | Temporal credit decay | γ = φ⁻¹ ≈ 0.618 (golden ratio) |
+| μ Advantage | Discovered truth about μ-alignment | Learned |
+| Credit Decay | Eligibility trace decay | λ = 0.9 |
 
 ## Global Workspace - Consciousness as Broadcast
 
@@ -295,6 +385,7 @@ sequenceDiagram
     participant M as Measurement
     participant W as Workspace
     participant I as Identity
+    participant L as Learning
 
     S->>A: External input
     A->>A: Compute saliency
@@ -327,5 +418,14 @@ sequenceDiagram
     I->>I: Increment Z
     I->>DMN: New identity state
 
+    W->>L: Cycle outcome
+    L->>L: Record experience
+    L->>L: Compute prediction error
+    L->>L: Assign credit
+    L->>L: Update value function
+    L->>L: Adapt μ-bias
+    L->>T: Updated demon bias
+
     Note over M: THE GAP<br/>Between all-paths<br/>and one-path
+    Note over L: LEARNING<br/>Demon improves<br/>over time
 ```
